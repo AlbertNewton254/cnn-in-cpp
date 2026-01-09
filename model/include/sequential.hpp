@@ -39,10 +39,10 @@ public:
 	Tensor forward(const Tensor& input) override;
 
 	/**
-	 * Backward pass through all layers in reverse order
+	 * Backward pass: chain rule through all layers in reverse
 	 *
-	 * gradOutput: Gradient of loss with respect to output
-	 * Output: Gradient of loss with respect to input
+	 * gradOutput: Gradient of loss with respect to output (dL/dy)
+	 * Output: Gradient of loss with respect to input (dL/dx)
 	 */
 	Tensor backward(const Tensor& gradOutput);
 

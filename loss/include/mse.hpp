@@ -6,8 +6,8 @@
 /**
  * Mean Squared Error loss function
  *
- * Computes L = (1/n) * sum((predictions - targets)^2)
- * Gradient: dL/d(predictions) = (2/n) * (predictions - targets)
+ * Forward: L = (1/n) * sum((predictions - targets)^2)
+ * Backward: dL/d(predictions) = (2/n) * (predictions - targets)
  */
 class MSE : public Loss {
 public:
@@ -21,11 +21,11 @@ public:
     Tensor forward(const Tensor& predictions, const Tensor& targets) override;
 
     /**
-     * Compute gradient of MSE w.r.t. predictions
+     * Compute gradient: dL/d(predictions) = (2/n) * (predictions - targets)
      *
      * predictions: Model predictions
      * targets: Ground truth targets
-     * Output: Tensor containing gradient with same shape as predictions
+     * Output: Gradient tensor with same shape as predictions
      */
     Tensor backward(const Tensor& predictions, const Tensor& targets) override;
 };

@@ -35,11 +35,11 @@ public:
     virtual Tensor forward(const Tensor& predictions, const Tensor& targets) = 0;
 
     /**
-     * Compute gradient with respect to predictions
+     * Compute gradient: dL/d(predictions)
      *
      * predictions: Model predictions
      * targets: Ground truth targets
-     * Output: Tensor containing gradient of loss w.r.t. predictions
+     * Output: Tensor containing gradient of loss with respect to predictions
      */
     virtual Tensor backward(const Tensor& predictions, const Tensor& targets) = 0;
 };
