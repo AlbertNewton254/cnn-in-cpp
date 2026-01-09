@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <cassert>
 
 Dense::Dense(size_t inputSize, size_t outputSize)
 	: weights({outputSize, inputSize}),
@@ -15,8 +16,9 @@ Dense::Dense(size_t inputSize, size_t outputSize)
 	std::srand(static_cast<unsigned int>(std::time(nullptr)));
 	double limit = std::sqrt(6.0 / (inputSize + outputSize));
 
+	double* weightsData = weights.getData().data();
 	for (size_t i = 0; i < weights.size(); i++) {
-		weights.getData()[i] = ((double)std::rand() / RAND_MAX) * 2 * limit - limit;
+		weightsData[i] = ((double)std::rand() / RAND_MAX) * 2 * limit - limit;
 	}
 
 	biases.fill(0.0);
@@ -26,22 +28,40 @@ Tensor Dense::forward(const Tensor& input) {
 	inputCache = input;
 
 	if (input.ndim() == 1) {
-		Tensor inputReshaped({1, input.getShape()[0]});
-		for (size_t i = 0; i < input.size(); i++) {
-			inputReshaped.getData()[i] = input.getData()[i];
-		}
+		size_t outputSize = biases.getShape()[0];
+		size_t inputSize = input.getShape()[0];
+		assert(weights.getShape()[0] == outputSize);
+		assert(weights.getShape()[1] == inputSize);
 
-		Tensor output = inputReshaped.matmul(weights.transpose());
-		Tensor result({biases.getShape()[0]});
-		for (size_t i = 0; i < biases.size(); i++) {
-			result.at({i}) = output.get({0, i}) + biases.get({i});
+		Tensor result({outputSize});
+		double* resultData = result.getData().data();
+		const double* inputData = input.getData().data();
+		const double* weightsData = weights.getData().data();
+		const double* biasData = biases.getData().data();
+
+		for (size_t i = 0; i < outputSize; i++) {
+			double sum = biasData[i];
+			for (size_t j = 0; j < inputSize; j++) {
+				sum += weightsData[i * inputSize + j] * inputData[j];
+			}
+			resultData[i] = sum;
 		}
 		return result;
 	} else if (input.ndim() == 2) {
-		Tensor output = input.matmul(weights.transpose());
-		for (size_t b = 0; b < output.getShape()[0]; b++) {
-			for (size_t i = 0; i < output.getShape()[1]; i++) {
-				output.at({b, i}) += biases.get({i});
+		assert(input.getShape()[1] == weights.getShape()[1]);
+
+		Tensor inputT = input.transpose();
+		Tensor outputT = weights.matmul(inputT);
+		Tensor output = outputT.transpose();
+
+		double* outputData = output.getData().data();
+		const double* biasData = biases.getData().data();
+		size_t batchSize = output.getShape()[0];
+		size_t outputSize = output.getShape()[1];
+
+		for (size_t b = 0; b < batchSize; b++) {
+			for (size_t i = 0; i < outputSize; i++) {
+				outputData[b * outputSize + i] += biasData[i];
 			}
 		}
 		return output;
@@ -52,38 +72,59 @@ Tensor Dense::forward(const Tensor& input) {
 
 Tensor Dense::backward(const Tensor& gradOutput) {
 	if (inputCache.ndim() == 1) {
-		for (size_t i = 0; i < weightGrad.getShape()[0]; i++) {
-			for (size_t j = 0; j < weightGrad.getShape()[1]; j++) {
-				weightGrad.at({i, j}) = gradOutput.get({i}) * inputCache.get({j});
+		size_t outputSize = weightGrad.getShape()[0];
+		size_t inputSize = weightGrad.getShape()[1];
+		assert(gradOutput.getShape()[0] == outputSize);
+		assert(inputCache.getShape()[0] == inputSize);
+
+		double* weightGradData = weightGrad.getData().data();
+		const double* gradOutData = gradOutput.getData().data();
+		const double* inputData = inputCache.getData().data();
+
+		for (size_t i = 0; i < outputSize; i++) {
+			for (size_t j = 0; j < inputSize; j++) {
+				weightGradData[i * inputSize + j] = gradOutData[i] * inputData[j];
 			}
 		}
 
-		for (size_t i = 0; i < biasGrad.getShape()[0]; i++) {
-			biasGrad.at({i}) = gradOutput.get({i});
+		double* biasGradData = biasGrad.getData().data();
+		for (size_t i = 0; i < outputSize; i++) {
+			biasGradData[i] = gradOutData[i];
 		}
 
-		Tensor gradOutputReshaped({1, gradOutput.getShape()[0]});
-		for (size_t i = 0; i < gradOutput.size(); i++) {
-			gradOutputReshaped.getData()[i] = gradOutput.getData()[i];
-		}
+		Tensor gradInput({inputSize});
+		double* gradInputData = gradInput.getData().data();
+		const double* weightsData = weights.getData().data();
 
-		Tensor gradInputBatch = gradOutputReshaped.matmul(weights);
-		Tensor gradInput({inputCache.getShape()[0]});
-		for (size_t i = 0; i < gradInput.size(); i++) {
-			gradInput.at({i}) = gradInputBatch.get({0, i});
+		for (size_t j = 0; j < inputSize; j++) {
+			double sum = 0.0;
+			for (size_t i = 0; i < outputSize; i++) {
+				sum += weightsData[i * inputSize + j] * gradOutData[i];
+			}
+			gradInputData[j] = sum;
 		}
 		return gradInput;
 	} else if (inputCache.ndim() == 2) {
+		assert(gradOutput.getShape()[1] == weightGrad.getShape()[0]);
+		assert(inputCache.getShape()[1] == weightGrad.getShape()[1]);
+
 		weightGrad = gradOutput.transpose().matmul(inputCache);
 
-		biasGrad.fill(0.0);
-		for (size_t b = 0; b < gradOutput.getShape()[0]; b++) {
-			for (size_t i = 0; i < biasGrad.getShape()[0]; i++) {
-				biasGrad.at({i}) += gradOutput.get({b, i});
+		double* biasGradData = biasGrad.getData().data();
+		const double* gradOutData = gradOutput.getData().data();
+		size_t batchSize = gradOutput.getShape()[0];
+		size_t outputSize = biasGrad.getShape()[0];
+
+		for (size_t i = 0; i < outputSize; i++) {
+			double sum = 0.0;
+			for (size_t b = 0; b < batchSize; b++) {
+				sum += gradOutData[b * outputSize + i];
 			}
+			biasGradData[i] = sum;
 		}
 
-		Tensor gradInput = gradOutput.matmul(weights);
+		Tensor weightsT = weights.transpose();
+		Tensor gradInput = gradOutput.matmul(weightsT);
 		return gradInput;
 	} else {
 		throw LayerDimensionError();

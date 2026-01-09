@@ -6,7 +6,10 @@
 #include "layer.hpp"
 
 /**
- * Fully connected (dense) layer
+ * Fully connected (dense) layer: y = Wx + b
+ *
+ * Implements pure mathematical convention where W in R^(m x n)
+ * transforms input x in R^n to output y in R^m
  *
  * weights: Weight matrix of shape {outputSize, inputSize}
  * biases: Bias vector of shape {outputSize}
@@ -32,17 +35,19 @@ public:
 	Dense(size_t inputSize, size_t outputSize);
 
 	/**
-	 * Forward pass: output = input * weights^T + biases
+	 * Forward pass: y = Wx + b
 	 *
-	 * input: Input tensor of shape {batchSize, inputSize} or {inputSize}
-	 * Output: Output tensor of shape {batchSize, outputSize} or {outputSize}
+	 * input: Input tensor
+	 *
+	 * Output: Output tensor
 	 */
 	Tensor forward(const Tensor& input) override;
 
 	/**
-	 * Backward pass: compute input gradients and parameter gradients
+	 * Backward pass: dL/dx = W^T (dL/dy)
 	 *
 	 * gradOutput: Gradient of loss with respect to output
+	 *
 	 * Output: Gradient of loss with respect to input
 	 */
 	Tensor backward(const Tensor& gradOutput) override;
