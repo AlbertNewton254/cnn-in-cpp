@@ -69,4 +69,4 @@ public:
 	std::vector<Tensor*> getGradients() override;
 };
 
-#endi
+#endif
