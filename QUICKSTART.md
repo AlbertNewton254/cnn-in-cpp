@@ -20,7 +20,7 @@ This guide shows you how to use the current features to build and train a neural
 ```cpp
 Sequential model;
 
-// Add layers
+/* Add layers */
 model.addLayer(std::make_shared<Dense>(inputSize, hiddenSize));
 model.addLayer(std::make_shared<Activation>(ActivationType::ReLU));
 model.addLayer(std::make_shared<Dense>(hiddenSize, outputSize));
@@ -35,21 +35,21 @@ model.addLayer(std::make_shared<Dense>(hiddenSize, outputSize));
 ### 3. Initialize Loss and Optimizer
 
 ```cpp
-MSE loss;                    // Mean Squared Error
-SGD optimizer(0.01);         // Learning rate = 0.01
+MSE loss;                    /* Mean Squared Error */
+SGD optimizer(0.01);         /* Learning rate = 0.01 */
 ```
 
 ### 4. Prepare Training Data
 
 ```cpp
-// Input data: shape {batchSize, inputSize}
+/* Input data: shape {batchSize, inputSize} */
 Tensor X({4, 2});
 X.at({0, 0}) = 0.0; X.at({0, 1}) = 0.0;
 X.at({1, 0}) = 0.0; X.at({1, 1}) = 1.0;
 X.at({2, 0}) = 1.0; X.at({2, 1}) = 0.0;
 X.at({3, 0}) = 1.0; X.at({3, 1}) = 1.0;
 
-// Target labels: shape {batchSize, outputSize}
+/* Target labels: shape {batchSize, outputSize} */
 Tensor y({4, 1});
 y.at({0, 0}) = 0.0;
 y.at({1, 0}) = 1.0;
