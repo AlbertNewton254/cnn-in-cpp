@@ -83,11 +83,11 @@ The library implements **reverse-mode automatic differentiation** based on funda
 
 #### Chain Rule Application
 
-For a composite function $L = f(g(x))$, the derivative is:
+For a composite function $L = f(g(x))$, the chain rule for gradients is:
 
-$$\frac{\partial L}{\partial x} = \frac{\partial L}{\partial g} \times \frac{\partial g}{\partial x}$$
+$$\frac{\partial L}{\partial x} = \left(\frac{\partial g}{\partial x}\right)^T \frac{\partial L}{\partial g}$$
 
-In neural networks, this translates to propagating gradients backward through layers:
+The gradient is the dual of the derivative via Riesz duality. In neural networks, this translates to propagating gradients backward through layers:
 
 $$\text{gradInput} = \text{backward}(\text{gradOutput})$$
 
@@ -97,8 +97,8 @@ where $\text{gradOutput} = \frac{\partial L}{\partial \text{output}}$ and $\text
 
 Each layer caches necessary values during the forward pass for efficient backward computation:
 
-- **Dense Layer**: Caches input tensor to compute weight gradients $\frac{\partial L}{\partial W} = \text{gradOutput} \times \text{input}^T$
-- **Activation Layer**: Caches input to compute derivatives (e.g., ReLU: $\text{grad} \times (\text{input} > 0)$)
+- **Dense Layer**: Caches input tensor to compute weight gradients $\frac{\partial L}{\partial W} = \frac{\partial L}{\partial y} x^T$
+- **Activation Layer**: Caches input to compute derivatives (e.g., ReLU: $\frac{\partial L}{\partial x} = \frac{\partial L}{\partial y} \odot \mathbb{1}_{x > 0}$)
 
 This design follows the **computational graph** paradigm where:
 
@@ -114,11 +114,11 @@ This enables mini-batch training where gradients are averaged over multiple samp
 
 #### Mathematical Foundations
 
-**Dense Layer (Linear Transform)**:
-- Forward: $y = Wx + b$
-- Backward:
-  - $\frac{\partial L}{\partial x} = W^T \times \frac{\partial L}{\partial y}$ (input gradient)
-  - $\frac{\partial L}{\partial W} = \frac{\partial L}{\partial y} \times x^T$ (weight gradient)
+**Dense Layer (Linear Transform)**: Pure mathematical convention
+- Forward: $y = Wx + b$ where $W \in \mathbb{R}^{m \times n}$, $x \in \mathbb{R}^{n}$
+- Backward (chain rule via Riesz duality):
+  - $\frac{\partial L}{\partial x} = W^T \frac{\partial L}{\partial y}$ (input gradient)
+  - $\frac{\partial L}{\partial W} = \frac{\partial L}{\partial y} x^T$ (weight gradient)
   - $\frac{\partial L}{\partial b} = \frac{\partial L}{\partial y}$ (bias gradient)
 
 **Activation Functions**:
