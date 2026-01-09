@@ -101,4 +101,3 @@ int main(void) {
 	std::printf("All tests passed successfully.\n");
 
 	return 0;
-}

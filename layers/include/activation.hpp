@@ -58,4 +58,4 @@ public:
 	bool hasWeights() const override { return false; }
 };
 
-#endif
+#endi
